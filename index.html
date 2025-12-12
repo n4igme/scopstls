@@ -114,6 +114,114 @@
             border-left: 3px solid var(--primary-light);
         }
 
+        /* Specific colors for security categories */
+        a[href="#blue-team"] {
+            color: #3498db !important; /* Blue color for Blue Team */
+        }
+
+        a[href="#bt-threat-intelligence"],
+        a[href="#bt-network-security"],
+        a[href="#bt-incident-response"],
+        a[href="#bt-devsecops"] {
+            color: #3498db !important; /* Blue color for Blue Team subcategories */
+        }
+
+        #blue-team h2,
+        #blue-team h3,
+        #blue-team h4,
+        #bt-threat-intelligence h2,
+        #bt-threat-intelligence h3,
+        #bt-threat-intelligence h4,
+        #bt-network-security h2,
+        #bt-network-security h3,
+        #bt-network-security h4,
+        #bt-incident-response h2,
+        #bt-incident-response h3,
+        #bt-incident-response h4,
+        #bt-devsecops h2,
+        #bt-devsecops h3,
+        #bt-devsecops h4 {
+            color: #3498db !important; /* Blue color for Blue Team headings */
+        }
+
+        a[href="#red-team"] {
+            color: #e74c3c !important; /* Red color for Red Team */
+        }
+
+        a[href="#rt-web-pentesting"],
+        a[href="#rt-cloud-pentesting"],
+        a[href="#rt-network-pentesting"] {
+            color: #e74c3c !important; /* Red color for Red Team subcategories */
+        }
+
+        #red-team h2,
+        #red-team h3,
+        #red-team h4,
+        #rt-web-pentesting h2,
+        #rt-web-pentesting h3,
+        #rt-web-pentesting h4,
+        #rt-cloud-pentesting h2,
+        #rt-cloud-pentesting h3,
+        #rt-cloud-pentesting h4,
+        #rt-network-pentesting h2,
+        #rt-network-pentesting h3,
+        #rt-network-pentesting h4 {
+            color: #e74c3c !important; /* Red color for Red Team headings */
+        }
+
+        a[href="#general-security"] {
+            color: #9b59b6 !important; /* Purple color for General Security */
+        }
+
+        a[href="#gs-forensics"],
+        a[href="#gs-crypto"],
+        a[href="#gs-devsecops"],
+        a[href="#gs-cloud"] {
+            color: #9b59b6 !important; /* Purple color for General Security subcategories */
+        }
+
+        #general-security h2,
+        #general-security h3,
+        #general-security h4,
+        #gs-forensics h2,
+        #gs-forensics h3,
+        #gs-forensics h4,
+        #gs-crypto h2,
+        #gs-crypto h3,
+        #gs-crypto h4,
+        #gs-devsecops h2,
+        #gs-devsecops h3,
+        #gs-devsecops h4,
+        #gs-cloud h2,
+        #gs-cloud h3,
+        #gs-cloud h4 {
+            color: #9b59b6 !important; /* Purple color for General Security headings */
+        }
+
+        /* Tool card heading colors by section */
+        #blue-team .tool-card h5,
+        #bt-threat-intelligence .tool-card h5,
+        #bt-network-security .tool-card h5,
+        #bt-incident-response .tool-card h5,
+        #bt-devsecops .tool-card h5 {
+            color: #3498db !important; /* Blue for Blue Team tool cards */
+        }
+
+        #red-team .tool-card h5,
+        #rt-web-pentesting .tool-card h5,
+        #rt-cloud-pentesting .tool-card h5,
+        #rt-network-pentesting .tool-card h5 {
+            color: #e74c3c !important; /* Red for Red Team tool cards */
+        }
+
+        #general-security .tool-card h5,
+        #gs-forensics .tool-card h5,
+        #gs-crypto .tool-card h5,
+        #gs-devsecops .tool-card h5,
+        #gs-cloud .tool-card h5 {
+            color: #9b59b6 !important; /* Purple for General Security tool cards */
+        }
+
         .nav-subcategory {
             margin-left: 15px;
             margin-top: 8px;
@@ -196,7 +304,7 @@
         }
 
         h1 {
-            color: var(--primary-light);
+            color: var(--text);
             margin: 0;
             font-size: 2.4em;
             font-weight: 600;
@@ -513,7 +621,7 @@
                     Choose from our categorized tools to meet your cybersecurity needs with our searchable directory.
                 </p>
 
-                <div style="margin-top: 20px; padding: 15px; background: var(--primary-light); border-left: 4px solid var(--primary); border-radius: 0 5px 5px 0;">
+                <div style="margin-top: 20px; padding: 15px; background: #555555; border-left: 4px solid var(--border); border-radius: 0 5px 5px 0;">
                     <p><strong>How to use this index:</strong> Use the navigation sidebar to jump between Blue Team and Red Team categories with their subcategories, or search for specific tools using the search bar. Each tool is tagged with relevant keywords for easier discovery.</p>
                 </div>
             </header>
