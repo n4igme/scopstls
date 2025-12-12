@@ -1,4 +1,4 @@
-# Security Operations Toolkit Index (scopstls)
+# SecOps Toolkits (scopstls)
 
 A comprehensive collection of security tools for Blue Team, Red Team, and general cybersecurity operations. This repository serves as an index and launching point for various security tools used in defensive and offensive security operations.
 
