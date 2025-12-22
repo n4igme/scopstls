@@ -2,6 +2,22 @@
 
 A comprehensive collection of security tools for Blue Team, Red Team, and general cybersecurity operations. This repository serves as an index and launching point for various security tools used in defensive and offensive security operations.
 
+## Repository Structure
+
+```
+scopstls/
+├── index.html                 # Main application interface
+├── LICENSE                    # Project licensing information
+├── README.md                  # This documentation file
+└── docs/                      # Documentation and guides
+    └── howto-guides/          # Specific tool how-to guides
+        ├── BurpExtender-HowTo.md
+        ├── Frida-HowTo.md
+        ├── Nuclei-HowTo.md
+        ├── Pwntools-HowTo.md
+        └── YARA-HowTo.md
+```
+
 ## Purpose
 
 This repository aims to provide:
@@ -86,6 +102,16 @@ The repository features a clean, left-sidebar navigation for improved usability:
 - **[MalAPI](https://malapi.io/)** - Malware API providing programmatic access to malware data (Threat Intelligence section)
 - **[FileSec](https://filesec.io/)** - File security and analysis resources (Digital Forensics section)
 
+## Documentation
+
+### How-To Guides
+Comprehensive tutorials for specific security tools are available in the `/docs/howto-guides/` directory:
+- [YARA How-To Guide](./docs/howto-guides/YARA-HowTo.md) - Creating and using YARA rules for malware detection
+- [Nuclei How-To Guide](./docs/howto-guides/Nuclei-HowTo.md) - Vulnerability scanning with Nuclei
+- [Frida How-To Guide](./docs/howto-guides/Frida-HowTo.md) - Dynamic analysis and hooking with Frida
+- [Pwntools How-To Guide](./docs/howto-guides/Pwntools-HowTo.md) - Binary exploitation with Pwntools
+- [Burp Extender How-To Guide](./docs/howto-guides/BurpExtender-HowTo.md) - Extending Burp Suite functionality
+
 ## Our Tools
 
 ### EML File Checker
@@ -155,6 +181,7 @@ When contributing new tools, please follow this standardized format:
 - `phishing/emlckr.html` - Our EML file analysis tool
 - `README.md` - This documentation file
 - `LICENSE` - Project licensing information
+- `docs/` - Documentation and tutorial files
 
 ### Code Standards
 - HTML: Valid semantic markup with proper class naming
