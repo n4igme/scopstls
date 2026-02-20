@@ -27,7 +27,21 @@ setTimeout(function() {
 }, 0);
 ```
 
-## Real-World Scenario 1: Bypassing SSL Pinning in Android App
+## Real-World Scenario 1: Bypassing Root Detection
+**Sample Case**: Root detection can be bypassed by hooking the detection methods and forcing them to return false
+```javascript
+Java.perform(() => {
+  var RootBeer = Java.use('com.scottyab.rootbeer.RootBeer');
+  
+  RootBeer.isRooted.overload().implementation = function() {
+    console.log('Root check bypassed');
+    return false;  // Always return not rooted
+  };
+});
+```
+
+
+## Real-World Scenario 2: Bypassing SSL Pinning in Android App
 
 **Situation**: You're testing an Android application that implements SSL pinning, preventing you from intercepting HTTPS traffic with a proxy like Burp Suite.
 
@@ -95,7 +109,7 @@ frida -U -n "com.example.app" -l ssl_pinning_bypass.js
 frida -U -f com.example.app -l ssl_pinning_bypass.js --no-pause
 ```
 
-## Real-World Scenario 2: Hooking Crypto Functions to Extract Keys
+## Real-World Scenario 3: Hooking Crypto Functions to Extract Keys
 
 **Situation**: You want to extract encryption keys from an application to understand how it protects sensitive data.
 
@@ -194,6 +208,36 @@ TargetClass.$init.implementation = function() {
 };
 ```
 
+### Method Hooking and Overriding
+```javascript
+Java.perform(() => {
+  var MainActivity = Java.use('com.example.MainActivity');
+  
+  MainActivity.onCreate.overload('android.os.Bundle').implementation = function(bundle) {
+    console.log('MainActivity onCreate called');
+    // Call original implementation
+    this.onCreate.call(this, bundle);
+  };
+});
+```
+
+### Hooking Reflection APIs
+```javascript
+// Hook Class.forName
+var JavaClass = Java.use('java.lang.Class');
+JavaClass.forName.overload('java.lang.String', 'boolean', 'java.lang.ClassLoader').implementation = function(name, b, c) {
+  console.log('Class.forName called:', name);
+  return this.forName.call(this, name, b, c);
+};
+
+// Hook Method.invoke
+var Method = Java.use('java.lang.reflect.Method');
+Method.invoke.overload('java.lang.Object', '[Ljava.lang.Object;').implementation = function(obj, args) {
+  console.log('Method invoked:', obj, args);
+  return this.invoke.call(this, obj, args);
+};
+```
+
 ### Enumerating Loaded Classes
 ```javascript
 Java.perform(function() {
@@ -206,6 +250,19 @@ Java.perform(function() {
         }
     });
 });
+```
+
+### Stack Trace Analysis
+```javascript
+var Log = Java.use("android.util.Log");
+var Exception = Java.use("java.lang.Exception");
+
+Log.d.overload("java.lang.String", "java.lang.String").implementation = function(tag, msg) {
+  if (msg.indexOf('root') >= 0) {
+    console.log(Log.getStackTraceString(Exception.$new()));
+  }
+  return this.d.call(this, tag, msg);
+};
 ```
 
 ### Finding Memory Allocations
@@ -225,6 +282,218 @@ Process.enumerateMallocedRanges({
         console.log("Memory enumeration completed");
     }
 });
+```
+
+### Memory Access and Manipulation
+```javascript
+['java.lang.StringBuilder', 'java.lang.StringBuffer'].forEach(function(clazz) {
+  Java.use(clazz)['toString'].implementation = function() {
+    var ret = this.toString();
+    console.log('String operation result:', ret);
+    return ret;
+  };
+});
+```
+
+### Intercepting Cryptographic Operations
+```javascript
+// Hook SecretKeySpec to capture encryption keys
+var SecretKeySpec = Java.use('javax.crypto.spec.SecretKeySpec');
+SecretKeySpec.$init.overload('[B', 'java.lang.String').implementation = function(key, algorithm) {
+  console.log('Encryption key:', bytesToString(key));
+  console.log('Algorithm:', algorithm);
+  return this.$init.call(this, key, algorithm);
+};
+
+// Hook Cipher.doFinal to capture plaintext
+var Cipher = Java.use('javax.crypto.Cipher');
+Cipher.doFinal.overload('[B').implementation = function(input) {
+  console.log('Input data:', bytesToString(input));
+  var result = this.doFinal.call(this, input);
+  console.log('Output data:', bytesToString(result));
+  return result;
+};
+```
+
+### Monitoring String Operations
+```javascript
+['java.lang.StringBuilder', 'java.lang.StringBuffer'].forEach(function(clazz) {
+  Java.use(clazz)['toString'].implementation = function() {
+    var ret = this.toString();
+    console.log('String operation result:', ret);
+    return ret;
+  };
+});
+```
+
+## Frida with Native Lib
+
+### Basic Native Function Hooking
+```javascript
+Interceptor.attach(Module.getExportByName('libnative-lib.so', 'Jniint'), {
+    onEnter: function(args) {
+        console.log('Native function called');
+    },
+    onLeave: function(retval) {
+        console.log('Return value:', retval);
+        retval.replace(0); // Modify return value
+    }
+});
+```
+
+### Java Layer Hooking (Easier)
+```javascript
+Java.perform(function () {
+    var Activity = Java.use('com.example.MainActivity');
+    
+    // Hook the Java declaration of the native method
+    Activity.nativeMethod.implementation = function () {
+        console.log('Java native method intercepted');
+        return 12345; // Return custom value without calling native code
+    };
+});
+```
+
+### Native Layer Hooking (Deeper Analysis)
+```javascript
+var addr = Module.getExportByName('libnative-lib.so', 'Java_com_example_MainActivity_nativeMethod');
+Interceptor.attach(addr, {
+    onEnter: function(args) {
+        // args[0] = JNIEnv*, args[1] = jobject, args[2+] = method arguments
+        console.log('JNIEnv pointer:', args[0]);
+        console.log('JObject (this):', args[1]);
+    },
+    onLeave: function(retval) {
+        retval.replace(100); // Override return value
+    }
+});
+```
+
+### Critical Timing: Library Loading
+```javascript
+Java.perform(function () {
+    var System = Java.use('java.lang.System');
+    var Runtime = Java.use('java.lang.Runtime');
+    
+    // Hook loadLibrary to know when native code is loaded
+    System.loadLibrary.implementation = function (name) {
+        console.log('Library loading:', name);
+        this.loadLibrary.call(this, name);
+        
+        // Hook native functions after library is loaded
+        if (name === 'native-lib') {
+            hookTargetNativeFunctions();
+        }
+    };
+});
+
+function hookTargetNativeFunctions() {
+    Interceptor.attach(Module.getExportByName('libnative-lib.so', 'targetFunction'), {
+        onEnter: function(args) {
+            console.log('Native function hooked successfully');
+        }
+    });
+}
+```
+
+### Enumerating Loaded Libraries
+```javascript
+// List all loaded modules
+var modules = Process.enumerateModules();
+modules.forEach(function (module) {
+    console.log('Module:', module.name, 'Base:', module.base);
+});
+
+// Enumerate exports from a specific library
+var exports = Module.enumerateExports('libc.so');
+exports.forEach(function (exp) {
+    if (exp.name.indexOf('crypto') !== -1) {
+        console.log('Export:', exp.name, 'Address:', exp.address);
+    }
+});
+
+// Find imports used by a library
+var imports = Module.enumerateImports('libtarget.so');
+imports.forEach(function (imp) {
+    console.log('Import:', imp.name, 'from', imp.module);
+});
+```
+
+### Hooking Non-Exported Functions
+```javascript
+// Get module base and add offset from disassembly
+var module = Process.getModuleByName('libtarget.so');
+var targetAddr = module.base.add(0x1234); // Offset found via Ghidra/IDA
+
+Interceptor.attach(targetAddr, {
+    onEnter: function(args) {
+        console.log('Hooked internal function at offset 0x1234');
+    }
+});
+```
+
+### Reading Native Function Arguments
+```javascript
+Interceptor.attach(Module.getExportByName('libcrypto.so', 'AES_set_encrypt_key'), {
+    onEnter: function(args) {
+        // args[0] = const unsigned char *userKey
+        var keyPtr = ptr(args[0]);
+        var keyLength = args[1].toInt32(); // int bits
+        
+        // Read raw bytes
+        var keyBytes = Memory.readByteArray(keyPtr, keyLength / 8);
+        console.log('Encryption key:', hexdump(keyBytes));
+        
+        // Read as string if applicable
+        console.log('Key string:', Memory.readUtf8String(keyPtr));
+    },
+    onLeave: function(retval) {
+        console.log('Return code:', retval.toInt32());
+    }
+});
+```
+
+### Complex Example Script
+```javascript
+function hook() {
+    Java.perform(function () {
+        // First hook Java layer to ensure library is loaded
+        var System = Java.use('java.lang.System');
+        System.loadLibrary.implementation = function (library) {
+            console.log("[*] Loading library: " + library);
+            this.loadLibrary.call(this, library);
+            
+            // Now hook native functions
+            if (library === "native-lib") {
+                hookNative();
+            }
+        };
+    });
+}
+
+function hookNative() {
+    try {
+        var module = Module.getExportByName("libnative-lib.so", "Java_com_example_MainActivity_Jniint");
+        
+        Interceptor.attach(module, {
+            onEnter: function (args) {
+                console.log("[*] Native function called");
+                console.log("JNIEnv*: " + args[0]);
+                console.log("jobject: " + args[1]);
+            },
+            onLeave: function (retval) {
+                console.log("[*] Original return value: " + retval);
+                retval.replace(80085); // Modify return value
+                console.log("[*] Modified return value: " + retval);
+            }
+        });
+        console.log("[*] Native hook installed successfully");
+    } catch (e) {
+        console.log("Error hooking native function: " + e);
+    }
+}
+
+Java.perform(hook);
 ```
 
 ## Tips and Best Practices
