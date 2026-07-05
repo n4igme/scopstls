@@ -1,3 +1,115 @@
-#MacOs
+# ─────────────────────────────────────
+# macOS
+# ─────────────────────────────────────
 .DS_Store
-docs/.DS_Store
+**/.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ─────────────────────────────────────
+# Python
+# ─────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+eggs/
+*.so
+.Python
+develop-eggs/
+lib/
+lib64/
+sdist/
+var/
+wheels/
+*.whl
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# ─────────────────────────────────────
+# IDE / Editor
+# ─────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# ─────────────────────────────────────
+# Logs & Temp
+# ─────────────────────────────────────
+*.log
+logs/
+tmp/
+temp/
+.tmp/
+
+# ─────────────────────────────────────
+# Security tool outputs (never commit)
+# ─────────────────────────────────────
+*.pcap
+*.pcapng
+*.cap
+*.har
+burp_*
+*.sqlite
+nmap-output/
+output/
+loot/
+exploits/
+*.raw
+mimikatz*
+ntlm_hashes*
+cracked*
+
+# ─────────────────────────────────────
+# Environment & Secrets
+# ─────────────────────────────────────
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+secrets.yaml
+secrets.json
+credentials.json
+token.json
+
+# ─────────────────────────────────────
+# Node (if tools add JS deps later)
+# ─────────────────────────────────────
+node_modules/
+package-lock.json
+yarn.lock
+
+# ─────────────────────────────────────
+# OS / Misc
+# ─────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.bak
+*.tmp
+*.temp
