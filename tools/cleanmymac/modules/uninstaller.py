@@ -40,23 +40,32 @@ class AppUninstaller:
                 pass
         return None
 
-    def list_apps(self):
+    def list_apps(self, top_n=None):
         """List all installed apps with sizes."""
         print("📱 Installed Applications:\n")
         apps = []
+        all_entries = []
         for app_dir in self.app_dirs:
             if not app_dir.exists():
                 continue
             for entry in sorted(app_dir.iterdir()):
                 if entry.suffix == ".app":
-                    size = self._dir_size(entry)
-                    bundle_id = self._get_bundle_id(entry) or "unknown"
-                    apps.append((entry.stem, size, bundle_id, entry))
+                    all_entries.append(entry)
+
+        for i, entry in enumerate(all_entries):
+            print(f"\r  ⏳ Scanning apps... {i+1}/{len(all_entries)}", end="", flush=True)
+            size = self._dir_size(entry)
+            bundle_id = self._get_bundle_id(entry) or "unknown"
+            apps.append((entry.stem, size, bundle_id, entry))
+        print()
 
         apps.sort(key=lambda x: x[1], reverse=True)
-        for name, size, bid, path in apps:
+        display = apps[:top_n] if top_n else apps
+        for name, size, bid, path in display:
             print(f"  {name:<35} {self._human_size(size):>10}  ({bid})")
 
+        if top_n and len(apps) > top_n:
+            print(f"\n  ... and {len(apps) - top_n} more (use --list to see all)")
         print(f"\n  Total: {len(apps)} apps")
 
     def _find_remnants(self, app_name, bundle_id):
@@ -240,6 +249,20 @@ class AppUninstaller:
             for r in remnants:
                 try:
                     p = Path(r["path"])
+                    # For LaunchAgent/Daemon plists, try bootout first
+                    if r.get("label") == "LaunchAgent" and p.suffix == ".plist":
+                        service_label = p.stem
+                        # Try to unload the service
+                        subprocess.run(
+                            ["launchctl", "bootout", f"gui/{os.getuid()}/{service_label}"],
+                            capture_output=True, timeout=5
+                        )
+                        # Also try system-level
+                        subprocess.run(
+                            ["launchctl", "bootout", f"system/{service_label}"],
+                            capture_output=True, timeout=5
+                        )
+                        print(f"  ⏹️  Unloaded {service_label}")
                     if p.is_dir():
                         shutil.rmtree(p)
                     else:

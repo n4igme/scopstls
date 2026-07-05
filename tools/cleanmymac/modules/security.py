@@ -92,14 +92,26 @@ class SecurityScanner:
 
     def _check_ssh(self):
         """Check Remote Login (SSH)."""
-        # Use launchctl to check SSH without requiring sudo
-        out = self._run("launchctl print system/com.openssh.sshd 2>&1", shell=True)
-        if "could not find service" in out.lower() or "No such" in out:
-            self._add_finding("✅", "Network", "SSH Disabled", "Remote Login is off")
-        elif out:
+        # Check for sshd listening on any port
+        out = self._run("pgrep -x sshd 2>/dev/null", shell=True)
+        if out:
+            # Get the actual port(s) it's listening on
+            ports_out = self._run("lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null | grep sshd", shell=True)
+            ports = []
+            if ports_out:
+                for line in ports_out.splitlines():
+                    parts = line.split()
+                    for p in parts:
+                        if "LISTEN" not in p and ":" in p and p[0].isdigit():
+                            port = p.split(":")[-1].split()[0]
+                            if port not in ports:
+                                ports.append(port)
+            port_str = f" (port {', '.join(ports)})" if ports else ""
             self._add_finding("🟡", "Network", "SSH Enabled",
-                            "Remote Login is on — accessible from network",
+                            f"sshd is running{port_str} — accessible from network",
                             "sudo systemsetup -setremotelogin off")
+        else:
+            self._add_finding("✅", "Network", "SSH Disabled", "No sshd process running")
 
     def _check_auto_update(self):
         """Check software update settings."""

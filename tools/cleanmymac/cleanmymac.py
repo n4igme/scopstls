@@ -41,7 +41,8 @@ COMMANDS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 SCAN — Preview what can be cleaned:
-  cleanmymac scan
+  cleanmymac scan                  Quick scan (caches, logs, packages)
+  cleanmymac scan --all            Full system disk breakdown + large files
 
 CLEAN — Remove junk files:
   cleanmymac clean                 Clean all safe items (with confirmation)
@@ -71,6 +72,7 @@ MALWARE — Deep malware analysis:
 
 UNINSTALL — Remove apps cleanly:
   cleanmymac uninstall --list              List all apps with sizes
+  cleanmymac uninstall --list --top 10     Show only top 10 largest apps
   cleanmymac uninstall --app Postman       Remove app + all remnants
   cleanmymac uninstall --app Postman --dry-run   Preview what would be removed
 
@@ -185,6 +187,30 @@ def cmd_scan(args):
     scanner = JunkScanner()
     results = scanner.scan(dry_run=True)
     scanner.print_report(results)
+    if args.all:
+        _print_disk_breakdown()
+
+
+def _print_disk_breakdown():
+    """Show system disk usage breakdown."""
+    from modules.utils import run_cmd as _run, human_size as _hs
+    print("\n  💾 System Disk Breakdown:\n")
+    # Top-level directories
+    out = _run("du -d1 -h / 2>/dev/null | sort -rh | head -15", shell=True)
+    if out:
+        for line in out.splitlines()[1:]:  # skip total
+            parts = line.strip().split("\t", 1)
+            if len(parts) == 2:
+                print(f"    {parts[0]:>8}  {parts[1]}")
+    print()
+    # Large files in home
+    print("  📁 Largest files in ~/:\n")
+    out = _run("find ~ -type f -size +100M 2>/dev/null | head -10 | while read f; do du -h \"$f\" 2>/dev/null; done | sort -rh", shell=True)
+    if out:
+        for line in out.splitlines()[:10]:
+            print(f"    {line}")
+    else:
+        print("    No files > 100MB found")
 
 
 def cmd_clean(args):
@@ -217,6 +243,16 @@ def cmd_clean(args):
 
     # Interactive selection mode
     if args.select:
+        # Filter out excluded items before selection
+        exclude = None
+        if args.exclude:
+            exclude = [e.strip() for e in args.exclude.split(",")]
+            filtered = {}
+            for cat, items in results.items():
+                filtered_items = [i for i in items if not any(ex.lower() in i["name"].lower() for ex in exclude)]
+                if filtered_items:
+                    filtered[cat] = filtered_items
+            results = filtered
         selected = _interactive_select(results, scanner)
         if not selected:
             print("  Nothing selected. Cancelled.")
@@ -283,7 +319,8 @@ def cmd_uninstall(args):
     """Uninstall an app and its remnants."""
     uninstaller = AppUninstaller()
     if args.list:
-        uninstaller.list_apps()
+        top_n = args.top if args.top > 0 else None
+        uninstaller.list_apps(top_n=top_n)
     elif args.app:
         uninstaller.uninstall(args.app, dry_run=args.dry_run)
     else:
@@ -331,7 +368,10 @@ def main():
         print(f"  cleanmymac v{VERSION}")
         return
 
-    banner()
+    # Check for --quiet early
+    if "--quiet" not in sys.argv and "-q" not in sys.argv:
+        banner()
+
     parser = argparse.ArgumentParser(
         prog="cleanmymac",
         description="macOS system utility — cleanup, security, uninstall, monitor",
@@ -339,10 +379,12 @@ def main():
     )
     parser.add_argument("-h", "--help", action="store_true", help="Show help")
     parser.add_argument("--version", "-v", action="store_true", help="Show version")
+    parser.add_argument("--quiet", "-q", action="store_true", help="Suppress banner output")
     sub = parser.add_subparsers(dest="command")
 
     # Scan
-    sub.add_parser("scan", help="Scan for junk (dry run)")
+    p_scan = sub.add_parser("scan", help="Scan for junk (dry run)")
+    p_scan.add_argument("--all", "-a", action="store_true", help="Show full system disk breakdown")
 
     # Clean
     p_clean = sub.add_parser("clean", help="Scan and remove junk files")
@@ -359,6 +401,7 @@ def main():
     p_uninstall.add_argument("--app", type=str, help="App name to uninstall")
     p_uninstall.add_argument("--list", action="store_true", help="List installed apps")
     p_uninstall.add_argument("--dry-run", action="store_true", help="Show what would be removed")
+    p_uninstall.add_argument("--top", type=int, default=0, help="Show top N apps by size (0=all)")
 
     # Monitor
     p_monitor = sub.add_parser("monitor", help="System resource monitor")
