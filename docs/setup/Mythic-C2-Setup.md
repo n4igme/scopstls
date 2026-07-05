@@ -10,6 +10,7 @@
 - ngrok (free tier)
 - Agent: apfell (macOS JavaScript agent)
 - C2 Profile: HTTP
+- Hermes Agent with Mythic MCP integration
 
 ### Purpose
 
@@ -17,6 +18,7 @@ Lab environment for:
 - **Mythic** — cross-platform post-exploit red teaming framework
 - **apfell** — macOS/JavaScript implant for adversary simulation
 - **ngrok** — public tunnel to expose C2 callback endpoint without a VPS
+- **Mythic MCP** — AI-driven pentesting via Hermes Agent (LLM controls agents)
 
 ### Architecture
 
@@ -40,6 +42,19 @@ Lab environment for:
                                            │  Postgres + Hasura   │
                                            │  (data/graph)        │
                                            └──────────────────────┘
+
+  AI-Driven Layer (optional):
+
+  ┌─────────────┐     MCP (stdio)     ┌──────────────────┐
+  │ Hermes      │◄───────────────────►│ Mythic MCP       │
+  │ Agent       │                     │ (~/Mythic/MCP)   │
+  └─────────────┘                     └────────┬─────────┘
+                                               │ Mythic Python SDK
+                                               │ (REST API)
+                                      ┌────────▼─────────┐
+                                      │ Mythic Server     │
+                                      │ (localhost:7443)  │
+                                      └──────────────────┘
 ```
 
 ### Mythic Docker Containers
@@ -303,6 +318,98 @@ Once a callback appears in the UI:
 
 ---
 
+## Step 10 — Hermes Agent MCP Integration (Optional)
+
+The Mythic MCP server allows Hermes Agent (or any MCP client) to autonomously
+control Mythic agents via natural language. An LLM can perform pentesting
+tasks — recon, privilege escalation, credential dumping — by calling MCP tools.
+
+### Install Dependencies
+
+```bash
+cd ~/Mythic/MCP
+uv venv
+uv pip install -e .
+```
+
+### Verify Connection
+
+```bash
+cd ~/Mythic/MCP
+.venv/bin/python -c "
+import asyncio
+from lib.mythic_api import MythicAPI
+async def test():
+    api = MythicAPI('mythic_admin', 'YOUR_PASSWORD', 'localhost', '7443')
+    await api.connect()
+    agents = await api.get_all_agents()
+    print(f'Connected! Found {len(agents)} active agents')
+asyncio.run(test())
+"
+```
+
+> Replace `YOUR_PASSWORD` with the value from `grep MYTHIC_ADMIN ~/Mythic/.env`.
+
+### Configure Hermes Agent
+
+Add to `~/.hermes/config.yaml` under `mcp_servers:`:
+
+```yaml
+  mythic:
+    command: uv
+    args:
+      - --directory
+      - /Users/<your-user>/Mythic/MCP
+      - run
+      - main.py
+      - mythic_admin
+      - YOUR_PASSWORD
+      - localhost
+      - "7443"
+    timeout: 120
+```
+
+Restart Hermes. The following tools become available:
+
+| MCP Tool                          | Description                              |
+|-----------------------------------|------------------------------------------|
+| mcp_mythic_get_all_agents         | List active agents (host, user, PID)     |
+| mcp_mythic_run_shell_command      | Execute shell commands on a target       |
+| mcp_mythic_read_file              | Read files via Win32 ReadFile API        |
+| mcp_mythic_upload_file            | Upload files to a target                 |
+| mcp_mythic_execute_powershell     | Run PowerShell scripts (encoded)         |
+| mcp_mythic_execute_mimikatz       | Run mimikatz for credential dumping      |
+| mcp_mythic_run_as_user            | Authenticate as another user             |
+| mcp_mythic_privilege_escalation_peas | Upload & run linPEAS/winPEAS          |
+| mcp_mythic_run_sharphound         | Run SharpHound (BloodHound collector)    |
+| mcp_mythic_ad_recon               | AD recon: whoami, net user/group, etc.   |
+| mcp_mythic_enum_domain_users      | Enumerate domain users via AD module     |
+| mcp_mythic_run_kerberoast         | Upload & run Rubeus for Kerberoasting    |
+
+### Example Prompts in Hermes
+
+Once configured, you can say things like:
+
+- "List all active mythic agents"
+- "Run AD recon on agent 1"
+- "Execute `whoami /all` on agent 1"
+- "Upload mimikatz and dump credentials on agent 1"
+- "Run SharpHound on agent 1 for BloodHound collection"
+
+The LLM will autonomously call the appropriate MCP tools, chain operations,
+and return structured results.
+
+### MCP Location
+
+The Mythic MCP server source is at: `~/Mythic/MCP/`
+
+Key files:
+- `main.py` — MCP server with all tool definitions
+- `lib/mythic_api.py` — Python wrapper around the Mythic SDK
+- `pyproject.toml` — Dependencies (httpx, mcp, mythic)
+
+---
+
 ## Operations
 
 ### Start Mythic
@@ -416,3 +523,6 @@ Free tier ngrok URLs change on restart. After restarting ngrok:
 - Agent Downloads: https://github.com/MythicAgents
 - C2 Profiles: https://github.com/MythicC2Profiles
 - ngrok Docs: https://ngrok.com/docs
+- Mythic MCP (AI-driven pentesting): `~/Mythic/MCP/README.md`
+- Hermes Agent MCP Config: `~/.hermes/config.yaml` → `mcp_servers.mythic`
+- BloodHound + Mythic Integration: [BloodHound-Mythic-Integration.md](./BloodHound-Mythic-Integration.md)
