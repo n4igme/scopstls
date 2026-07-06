@@ -10,7 +10,7 @@
 | Docker Desktop | 29.6.1 |
 | n8n version | 2.28.6 (latest as of 2026-07-05) |
 | Database | PostgreSQL 16 (Alpine) in companion container |
-| Shared filesystem | `/Users/nb-dk-0552/n8n-shared` → `/data/shared` in container |
+| Shared filesystem | `/Users/nb-dk-0552/PlayGround/n8n-shared` → `/data/shared` in container |
 | n8n data volume | `n8n_data` Docker volume → `/home/node/.n8n` inside container |
 | Instance URL | `http://localhost:5678` |
 
@@ -56,7 +56,7 @@ Local n8n deployment for:
 
 ```bash
 mkdir -p /opt/n8n/docker-setup
-mkdir -p /Users/nb-dk-0552/n8n-shared
+mkdir -p /Users/nb-dk-0552/PlayGround/n8n-shared
 ```
 
 All deployment files live in `/opt/n8n/docker-setup/`. The shared directory is at `~/n8n-shared`.
@@ -143,7 +143,7 @@ services:
       - GENERIC_TIMEZONE=Asia/Seoul
     volumes:
       - n8n_data:/home/node/.n8n
-      - /Users/nb-dk-0552/n8n-shared:/data/shared
+      - /Users/nb-dk-0552/PlayGround/n8n-shared:/data/shared
     depends_on:
       db:
         condition: service_healthy
